@@ -29,6 +29,35 @@ def laprovincia(codigoProvincia):
     fichero.close()
     return 'La provincia no existe, tomatela!'
 
+@app.route('/casos/<int:year>', defaults={'mes': None, 'dia': None})
+@app.route('/casos/<int:year>/<int:mes>')
 @app.route('/casos/<int:year>/<int:mes>/<int:dia>')
-def casos(year, mes, dia):
-    return 'To be continued...'
+def casos(year, mes, dia=None):
+    if not mes:
+        fecha = "{:04d}".format(year)
+    elif not dia:
+        fecha = "{:04d}-{:02d}".format(year, mes)
+    else:
+        fecha = "{:04d}-{:02d}-{:02d}".format(year, mes, dia)
+    
+    fichero = open("data/casos_diagnostico_provincia.csv", "r")
+    dictReader = csv.DictReader(fichero)
+    
+    res = {
+    'num_casos': 0,
+    'num_casos_prueba_pcr': 0,
+    'num_casos_prueba_test_ac': 0,
+    'num_casos_prueba_ag': 0,
+    'num_casos_prueba_elisa': 0,
+    'num_casos_prueba_desconocida': 0
+    }
+    
+    for registro in dictReader:
+        if fecha in registro['fecha']:
+            for clave in res:
+                res[clave] += int(registro[clave])
+        elif registro['fecha'] > fecha:
+            break
+
+    fichero.close()
+    return json.dumps(res)
